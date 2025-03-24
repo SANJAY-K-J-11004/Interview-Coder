@@ -30,7 +30,7 @@ app.use((req, res, next) => {
 });
 
 // Initialize Groq SDK instance with your API key
-const apiKey = "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"//"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"//"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";
+const apiKey = "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"//"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"//"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"//"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";
 console.log(`Using Groq API key: ${apiKey.substring(0, 10)}...`);
 const groq = new Groq({ apiKey });
 
