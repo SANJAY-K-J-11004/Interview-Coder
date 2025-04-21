@@ -242,7 +242,7 @@ app.post("/api/debug", async (req, res) => {
     // Use non-streaming response
     const chatCompletion = await groq.chat.completions.create({
       messages,
-      model: "qwen-2.5-coder-32b",
+      model: "qwen-qwq-32b",
       temperature: 0.6,
       max_completion_tokens: 4096,
       top_p: 0.95,
