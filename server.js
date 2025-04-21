@@ -150,7 +150,7 @@ app.post("/api/generate", async (req, res) => {
     // Create a chat completion with streaming disabled to get full response
     const chatCompletion = await groq.chat.completions.create({
       messages,
-      model: "qwen-2.5-coder-32b",
+      model: "qwen-qwq-32b",
       temperature: 0.6,
       max_completion_tokens: 4096,
       top_p: 0.95,
@@ -301,7 +301,7 @@ app.get("/api/test-groq", async (req, res) => {
     console.log("Testing Groq API connection...");
     const completion = await groq.chat.completions.create({
       messages: [{ role: "user", content: "Hello, can you respond with just the text 'Groq API is working'?" }],
-      model: "qwen-2.5-coder-32b",
+      model: "qwen-qwq-32b",
       max_completion_tokens: 10,
       temperature: 0,
     });
