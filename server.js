@@ -87,7 +87,11 @@ app.post("/api/extract", async (req, res) => {
       // Terminate the worker after use
       await worker.terminate();
     }
-   const finalPrompt = `
+   
+    const problemText = ocrResults.join("\n");
+
+//new here
+    const finalPrompt = `
       ${problemText}
 
     ---
@@ -96,11 +100,14 @@ app.post("/api/extract", async (req, res) => {
       1. The time complexity.
       2. The space complexity.
       `;
-    const problemText = ocrResults.join("\n");
+
+    
     console.log("OCR extraction successful. Extracted text:", problemText.substring(0, 100) + (problemText.length > 100 ? "..." : ""));
     
     // res.json({ problemText });
     res.json({ problemText: finalPrompt });
+
+    
   } catch (error) {
     console.error("OCR extraction error:", error);
     res.status(500).json({ error: "OCR extraction failed", details: error.message });
