@@ -91,21 +91,21 @@ app.post("/api/extract", async (req, res) => {
     const problemText = ocrResults.join("\n");
 
 //new here
-    const finalPrompt = `
-      ${problemText}
+    // const finalPrompt = `
+    //   ${problemText}
 
-    ---
+    // ---
 
-      Please analyze the above problem and provide:
-      1. The time complexity.
-      2. The space complexity.
-      `;
+    //   Please analyze the above problem and provide:
+    //   1. The time complexity.
+    //   2. The space complexity.
+    //   `;
 
     
     console.log("OCR extraction successful. Extracted text:", problemText.substring(0, 100) + (problemText.length > 100 ? "..." : ""));
     
-    // res.json({ problemText });
-    res.json({ problemText: finalPrompt });
+    res.json({ problemText });
+    // res.json({ problemText: finalPrompt });
 
     
   } catch (error) {
@@ -166,7 +166,7 @@ app.post("/api/generate", async (req, res) => {
     // Create a chat completion with streaming disabled to get full response
     const chatCompletion = await groq.chat.completions.create({
       messages,
-      model: "qwen-qwq-32b",
+      model: "mistral-saba-24b",
       temperature: 0.6,
       max_completion_tokens: 4096,
       top_p: 0.95,
@@ -258,7 +258,7 @@ app.post("/api/debug", async (req, res) => {
     // Use non-streaming response
     const chatCompletion = await groq.chat.completions.create({
       messages,
-      model: "qwen-qwq-32b",
+      model: "mistral-saba-24b",
       temperature: 0.6,
       max_completion_tokens: 4096,
       top_p: 0.95,
@@ -317,7 +317,7 @@ app.get("/api/test-groq", async (req, res) => {
     console.log("Testing Groq API connection...");
     const completion = await groq.chat.completions.create({
       messages: [{ role: "user", content: "Hello, can you respond with just the text 'Groq API is working'?" }],
-      model: "qwen-qwq-32b",
+      model: "mistral-saba-24b",
       max_completion_tokens: 10,
       temperature: 0,
     });
