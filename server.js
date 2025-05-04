@@ -250,7 +250,7 @@ The response MUST be valid JSON. Make sure to escape any special characters in s
    
     const chatCompletion = await groq.chat.completions.create({
       messages,
-      model: "gemma2-9b-it",
+      model: "mistral-saba-24b",
       temperature: 0.2,
       max_completion_tokens: 2048,
       top_p: 0.95,
