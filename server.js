@@ -219,6 +219,146 @@ app.post("/api/generate", async (req, res) => {
   }
 });
 
+// --- NEW MCQ Answer Generation Endpoint ---
+app.post("/api/answer-mcq", async (req, res) => {
+  try {
+    const { problemInfo } = req.body;
+    console.log("Here is the data from body:", { problemInfo });
+    
+    if (!problemInfo) {
+      return res.status(400).json({ error: "No question text provided" });
+    }
+   
+    console.log(`Generating MCQ answer`);
+   
+    const messages = [
+      {
+        role: "user",
+        content: `Analyze this multiple choice question and provide the correct answer:
+${problemInfo}
+Provide your response in the following JSON format:
+{
+  "correctOption": "A", // The letter of the correct option (A, B, C, D, etc.)
+  "thoughts": ["reasoning step 1", "reasoning step 2", "reasoning step 3","Final correct answer"],
+  "explanation": "Detailed explanation of why this is the correct answer"
+}
+The response MUST be valid JSON. Make sure to escape any special characters in strings properly.Also provide the final correct answer from the options(Final correct answer should be the last element in the thoughts array).`,
+      }
+    ];
+    
+    console.log("Calling Groq API for MCQ answer...");
+   
+    const chatCompletion = await groq.chat.completions.create({
+      messages,
+      model: "gemma2-9b-it",
+      temperature: 0.2,
+      max_completion_tokens: 2048,
+      top_p: 0.95,
+      stream: false,
+      stop: null,
+    });
+    
+    console.log("Groq API MCQ answer call successful");
+   
+    const fullResponse = chatCompletion.choices[0].message.content;
+    console.log("Raw response from model:", fullResponse);
+    
+    // Process the response to extract valid JSON
+    try {
+      // First try: Remove markdown formatting and fix potential issues
+      const cleanedJson = fullResponse
+        .replace(/```json\s*|\s*```/g, '') // Remove markdown code blocks
+        .trim();
+      
+      // Manual parsing to handle unescaped quotes
+      let manuallyFixedJson;
+      
+      // Extract the three main components separately
+      const correctOptionMatch = cleanedJson.match(/"correctOption"\s*:\s*"([^"]+)"/);
+      const correctOption = correctOptionMatch ? correctOptionMatch[1] : "Not specified";
+      
+      // Extract thoughts array
+      const thoughtsMatch = cleanedJson.match(/"thoughts"\s*:\s*\[([\s\S]*?)\]/);
+      let thoughts = ["No specific reasoning provided"];
+      if (thoughtsMatch) {
+        // Split by commas between array items but be careful with commas inside quotes
+        thoughts = thoughtsMatch[1]
+          .split(/,(?=\s*")/g) // Split only on commas followed by whitespace and quotes
+          .map(item => {
+            // Extract just the content inside the quotes
+            const contentMatch = item.match(/"([\s\S]*?)"/);
+            return contentMatch ? contentMatch[1] : item.trim();
+          })
+          .filter(item => item.length > 0); // Remove empty items
+      }
+      
+      // Extract explanation by finding the bounds
+      const explanationStartIdx = cleanedJson.indexOf('"explanation"');
+      let explanation = "No explanation provided";
+      
+      if (explanationStartIdx !== -1) {
+        // Find the start of the actual content (after the colon and opening quote)
+        const contentStartIdx = cleanedJson.indexOf(':', explanationStartIdx) + 1;
+        const contentStartQuoteIdx = cleanedJson.indexOf('"', contentStartIdx) + 1;
+        
+        // Find the end quote of the explanation (the last quote before the closing brace)
+        const remainingText = cleanedJson.substring(contentStartQuoteIdx);
+        let contentEndQuoteIdx = -1;
+        
+        // Find the last unescaped quote before the end of the JSON
+        for (let i = 0; i < remainingText.length; i++) {
+          if (remainingText[i] === '"' && 
+              (i === 0 || remainingText[i-1] !== '\\') && 
+              remainingText.substring(i+1).trim().startsWith('}')) {
+            contentEndQuoteIdx = i;
+            break;
+          }
+        }
+        
+        if (contentEndQuoteIdx !== -1) {
+          explanation = remainingText.substring(0, contentEndQuoteIdx)
+            .replace(/\\n/g, '\n')
+            .replace(/\\"/g, '"');
+        }
+      }
+      
+      // Construct the fixed JSON
+      const jsonResponse = {
+        correctOption,
+        thoughts,
+        explanation
+      };
+      
+      console.log("Parsed JSON response:", jsonResponse);
+      return res.json(jsonResponse);
+    } catch (parseError) {
+      console.error("Error parsing JSON from model response:", parseError);
+      console.error("Failed response content:", fullResponse);
+      
+      // Fallback response when all parsing fails
+      const fallbackResponse = {
+        correctOption: "Could not determine",
+        thoughts: ["Failed to parse structured response from model"],
+        explanation: fullResponse.replace(/```json\s*|\s*```/g, '').substring(0, 500)
+      };
+      
+      return res.json(fallbackResponse);
+    }
+  } catch (error) {
+    console.error("MCQ answer generation error:", error);
+    return res.status(500).json({ 
+      error: "MCQ answer generation failed", 
+      details: error.message 
+    });
+  }
+});
+
+
+
+
+
+
+
 // --- Debug Endpoint using Groq for Chat Completions ---
 // Modify the /api/debug endpoint similarly
 app.post("/api/debug", async (req, res) => {
