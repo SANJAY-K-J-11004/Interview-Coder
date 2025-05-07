@@ -6,7 +6,7 @@ const Groq = require("groq-sdk");
 const fs = require("fs");
 const path = require("path");
 const crypto = require("crypto");
-import Anthropic from "@anthropic-ai/sdk";
+const Anthropic = require("@anthropic-ai/sdk");
 
 // Load environment variables from .env file
 dotenv.config();
