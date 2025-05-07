@@ -16,6 +16,7 @@
     "fs": "^0.0.1-security",
     "groq-sdk": "^0.16.0",
     "path": "^0.12.7",
-    "tesseract.js": "^6.0.0"
+    "tesseract.js": "^6.0.0",
+    "@anthropic-ai/sdk": "^0.40.1"
   }
 }
