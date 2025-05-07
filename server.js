@@ -6,6 +6,7 @@ const Groq = require("groq-sdk");
 const fs = require("fs");
 const path = require("path");
 const crypto = require("crypto");
+import Anthropic from "@anthropic-ai/sdk";
 
 // Load environment variables from .env file
 dotenv.config();
@@ -29,10 +30,16 @@ app.use((req, res, next) => {
   next();
 });
 
+const apiKey = "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"; // Use environment variable for API key
+console.log(`Using Anthropic API key: ${apiKey ? apiKey.substring(0, 10) + "..." : "NOT SET"}`);
+const anthropic = new Anthropic({ apiKey });
+
+
+
 // Initialize Groq SDK instance with your API key
-const apiKey = "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"//"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"//"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"//"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"//"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";
-console.log(`Using Groq API key: ${apiKey.substring(0, 10)}...`);
-const groq = new Groq({ apiKey });
+const apiKey1 = "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"//"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"//"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"//"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"//"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";
+console.log(`Using Groq API key: ${apiKey1.substring(0, 10)}...`);
+const groq = new Groq({ apiKey1 });
 
 // Supported Tesseract languages
 const SUPPORTED_LANGUAGES = ["eng", "fra", "deu", "spa", "ita", "por", "chi_sim", "chi_tra", "jpn", "kor", "ara", "hin", "rus"];
@@ -126,8 +133,10 @@ app.post("/api/extract", async (req, res) => {
   }
 });
 
-// --- Generation Endpoint using Groq for Chat Completions ---
-// Modify the /api/generate endpoint in your server (paste-2.txt)
+
+
+
+
 app.post("/api/generate", async (req, res) => {
   try {
     const { problemText, language } = req.body;
@@ -144,40 +153,35 @@ app.post("/api/generate", async (req, res) => {
     const lang = language || "cpp";
     console.log(`Generating solution in ${lang}`);
     
-    // Construct the message for the chat completion with specific formatting instructions
-    const messages = [
-      {
-        role: "user",
-        content: `Solve the following problem in ${lang}:\n${problemText}\n
-        Provide your solution in the following JSON format:
-        {
-          "code": "your complete code solution here",
-          "thoughts": ["thought 1", "thought 2", "thought 3"], 
-          "time_complexity": "O(n) explanation here",
-          "space_complexity": "O(n) explanation here"
-        }
-        
-        The response MUST be valid JSON. Make sure to escape any special characters in strings properly.`,
-      },
-    ];
-
-    console.log("Calling Groq API...");
+    // Construct the message for Claude with specific formatting instructions
+    const message = `Solve the following problem in ${lang}:\n${problemText}\n
+    Provide your solution in the following JSON format:
+    {
+      "code": "your complete code solution here",
+      "thoughts": ["thought 1", "thought 2", "thought 3"], 
+      "time_complexity": "O(n) explanation here",
+      "space_complexity": "O(n) explanation here"
+    }
     
-    // Create a chat completion with streaming disabled to get full response
-    const chatCompletion = await groq.chat.completions.create({
-      messages,
-      model: "mistral-saba-24b",
+    The response MUST be valid JSON. Make sure to escape any special characters in strings properly.`;
+
+    console.log("Calling Claude API...");
+    
+    // Create a completion using Claude model
+    const completion = await anthropic.messages.create({
+      model: "claude-3-7-sonnet-20250219", // Latest Claude model (as of May 2025)
+      max_tokens: 4096,
       temperature: 0.6,
-      max_completion_tokens: 4096,
       top_p: 0.95,
-      stream: false, // Change to non-streaming
-      stop: null,
+      messages: [
+        { role: "user", content: message }
+      ]
     });
 
-    console.log("Groq API call successful");
+    console.log("Claude API call successful");
     
     // Get the full response
-    const fullResponse = chatCompletion.choices[0].message.content;
+    const fullResponse = completion.content[0].text;
     
     // Extract JSON from the response (handling potential text before/after JSON)
     let jsonResponse;
@@ -218,6 +222,105 @@ app.post("/api/generate", async (req, res) => {
     res.status(500).json({ error: "Generation failed", details: error.message });
   }
 });
+
+
+
+
+
+
+
+// --- Generation Endpoint using Groq for Chat Completions ---
+// Modify the /api/generate endpoint in your server (paste-2.txt)
+// app.post("/api/generate", async (req, res) => {
+//   try {
+//     const { problemText, language } = req.body;
+//     console.log("Generate endpoint called with:", {
+//       languageRequested: language,
+//       problemTextLength: problemText ? problemText.length : 0,
+//       problemTextPreview: problemText ? problemText.substring(0, 100) + (problemText.length > 100 ? "..." : "") : "none"
+//     });
+    
+//     if (!problemText) {
+//       return res.status(400).json({ error: "No problem text provided" });
+//     }
+    
+//     const lang = language || "cpp";
+//     console.log(`Generating solution in ${lang}`);
+    
+//     // Construct the message for the chat completion with specific formatting instructions
+//     const messages = [
+//       {
+//         role: "user",
+//         content: `Solve the following problem in ${lang}:\n${problemText}\n
+//         Provide your solution in the following JSON format:
+//         {
+//           "code": "your complete code solution here",
+//           "thoughts": ["thought 1", "thought 2", "thought 3"], 
+//           "time_complexity": "O(n) explanation here",
+//           "space_complexity": "O(n) explanation here"
+//         }
+        
+//         The response MUST be valid JSON. Make sure to escape any special characters in strings properly.`,
+//       },
+//     ];
+
+//     console.log("Calling Groq API...");
+    
+//     // Create a chat completion with streaming disabled to get full response
+//     const chatCompletion = await groq.chat.completions.create({
+//       messages,
+//       model: "mistral-saba-24b",
+//       temperature: 0.6,
+//       max_completion_tokens: 4096,
+//       top_p: 0.95,
+//       stream: false, // Change to non-streaming
+//       stop: null,
+//     });
+
+//     console.log("Groq API call successful");
+    
+//     // Get the full response
+//     const fullResponse = chatCompletion.choices[0].message.content;
+    
+//     // Extract JSON from the response (handling potential text before/after JSON)
+//     let jsonResponse;
+//     try {
+//       // Find JSON in the response text (looking for opening and closing braces)
+//       const jsonMatch = fullResponse.match(/\{[\s\S]*\}/);
+//       if (jsonMatch) {
+//         jsonResponse = JSON.parse(jsonMatch[0]);
+//       } else {
+//         // Fallback: parse the entire response as JSON
+//         jsonResponse = JSON.parse(fullResponse);
+//       }
+      
+//       // Ensure required fields exist
+//       jsonResponse = {
+//         code: jsonResponse.code || "",
+//         thoughts: Array.isArray(jsonResponse.thoughts) ? jsonResponse.thoughts : ["No specific thoughts provided"],
+//         time_complexity: jsonResponse.time_complexity || "Not specified",
+//         space_complexity: jsonResponse.space_complexity || "Not specified"
+//       };
+      
+//       res.json(jsonResponse);
+//     } catch (error) {
+//       console.error("Error parsing JSON from model response:", error);
+      
+//       // Fallback: If JSON parsing fails, create a structured response from text
+//       const fallbackResponse = {
+//         code: fullResponse.replace(/```[\w]*\n([\s\S]*?)```/g, "$1").trim() || fullResponse,
+//         thoughts: ["Automatically extracted from unstructured response"],
+//         time_complexity: "Could not determine from response",
+//         space_complexity: "Could not determine from response"
+//       };
+      
+//       res.json(fallbackResponse);
+//     }
+//   } catch (error) {
+//     console.error("Generation error:", error);
+//     res.status(500).json({ error: "Generation failed", details: error.message });
+//   }
+// });
 
 // --- NEW MCQ Answer Generation Endpoint ---
 app.post("/api/answer-mcq", async (req, res) => {
