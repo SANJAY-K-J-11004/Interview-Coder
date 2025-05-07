@@ -32,7 +32,7 @@ app.use((req, res, next) => {
 
 //const apiKey = "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"; // Use environment variable for API key
 //console.log(`Using Anthropic API key: ${apiKey ? apiKey.substring(0, 10) + "..." : "NOT SET"}`);
-const anthropic = new Anthropic({ apiKey: "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" });
+const anthropic = new Anthropic({ apiKey: "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" });
 
 
 
