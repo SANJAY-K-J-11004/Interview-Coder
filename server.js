@@ -31,14 +31,14 @@ app.use((req, res, next) => {
 });
 
 //const apiKey = "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"; // Use environment variable for API key
-console.log(`Using Anthropic API key: ${apiKey ? apiKey.substring(0, 10) + "..." : "NOT SET"}`);
+//console.log(`Using Anthropic API key: ${apiKey ? apiKey.substring(0, 10) + "..." : "NOT SET"}`);
 const anthropic = new Anthropic({ apiKey: "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" });
 
 
 
 // Initialize Groq SDK instance with your API key
 //const apikey = "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"//"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"//"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"//"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"//"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";
-console.log(`Using Groq API key: ${apikey.substring(0, 10)}...`);
+//console.log(`Using Groq API key: ${apikey.substring(0, 10)}...`);
 const groq = new Groq({ apiKey:"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" });
 
 // Supported Tesseract languages
