@@ -6,6 +6,7 @@ const Groq = require("groq-sdk");
 const fs = require("fs");
 const path = require("path");
 const crypto = require("crypto");
+const { z }  = require("zod");
 const Anthropic = require("@anthropic-ai/sdk");
 
 // Load environment variables from .env file
