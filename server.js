@@ -463,7 +463,7 @@ app.post("/api/generate", async (req, res) => {
     const problemInfo = req.body;
     console.log("Received problem info:", problemInfo);
 
-    const anthropicApiKey = process.env.ANTHROPIC_KEY;
+    const anthropicApiKey = process.env.ANTHROPIC_API_KEY;
     if (!anthropicApiKey) {
       console.log("Anthropic API key is not configured");
       return res.status(500).json(
