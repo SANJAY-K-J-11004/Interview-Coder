@@ -463,7 +463,7 @@ app.post("/api/generate", async (req, res) => {
     const problemInfo = req.body;
     console.log("Received problem info:", problemInfo);
 
-    const anthropicApiKey = process.env.ANTHROPIC_API_KEY;
+    const anthropicApiKey = process.env.ANTHROPIC_KEY;
     if (!anthropicApiKey) {
       console.log("Anthropic API key is not configured");
       return res.status(500).json(
@@ -477,8 +477,33 @@ app.post("/api/generate", async (req, res) => {
       const anthropic = new Anthropic({
         apiKey: anthropicApiKey
       });
+let systemPrompt = "";
+      
+{
+  problemInfo.language == "plaintext"? systemPrompt = `Analyze and provide an extremely detailed, comprehensive explanation for the following problem or question:\n${problemInfo.problemText}\n
+              Provide your detailed explanation in the following JSON format:
+              {
+                "code": "An extremely thorough, in-depth explanation of the problem and its solution. Format your explanation as a series of numbered points for clarity. Each point should be highly detailed and explore a specific aspect of the problem or solution in depth. Use markdown formatting with line breaks between points. Include examples, edge cases, and alternative approaches where relevant.",
+                "thoughts": ["key insight 1", "key insight 2", "key insight 3", "key insight 4", "key insight 5"],
+                "time_complexity": "If applicable, provide the time complexity in big-O notation (e.g., O(n)) followed by a detailed explanation of why this is the case. Include examples or scenarios where this complexity applies.",
+                "space_complexity": "If applicable, provide the space complexity in big-O notation (e.g., O(n)) followed by a detailed explanation of why this is the case. Include examples or scenarios where this complexity applies."
+              }
 
-      const systemPrompt = `You are a coding assistant that generates solutions and analyzes them. For each field in your response:
+              IMPORTANT:
+              1. The "code" field should contain a DETAILED explanation in plain text format, not actual code.
+              2. Format the explanation as a series of numbered points (1., 2., 3.) with at least 5 detailed points.
+              3. Include line breaks between points for better readability.
+              4. Structure the explanation logically, covering:
+                 - Problem understanding and analysis
+                 - Key concepts and definitions
+                 - Multiple approaches to solving the problem
+                 - Detailed walkthrough of the solution process
+                 - Edge cases and how to handle them
+                 - Time and space complexity analysis (if applicable)
+                 - Real-world applications or examples
+              5. The explanation should be educational and thorough, as if teaching someone the concept from scratch.
+              The response MUST be valid JSON. Make sure to escape any special characters in strings properly.`
+      :systemPrompt = `You are a coding assistant that generates solutions and analyzes them. For each field in your response:
 - thoughts: Provide 3 short, conversational thoughts about your solution approach, as if explaining to a teacher. Explain your thought process progressively, as if arriving at the solution step by step. Focus on the code and logic only.
 - code: Write the complete ${problemInfo.language || "cpp"} solution. Make it optimal, legible, and include inline comments after every line. Only write the function, not test cases.
 - time_complexity: Start with big-O notation (e.g., O(n)) followed by a brief explanation of why
@@ -492,13 +517,15 @@ Your response must be in the following JSON format:
   "space_complexity": "O(X) followed by explanation"
 }
 Make sure your response is valid JSON.`;
+}
 
-      const userPrompt = `Generate a solution and analysis for this problem:
+const userPrompt = `Generate a solution and analysis for this problem:
 
 Problem Statement: ${problemInfo.problem_statement || "None"}
 Input Format: ${problemInfo.input_format?.description || "None"}
 Output Format: ${problemInfo.output_format?.description || "None"}
 Test Cases: ${JSON.stringify(problemInfo.test_cases || [], null, 2)}`;
+
 
       const response = await anthropic.messages.create({
         model: "claude-3-7-sonnet-20250219",
